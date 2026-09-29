@@ -103,6 +103,7 @@ beforeEach(() => {
   insights.setCannedKind("prompt_maturity_review");
   insights.setProject("");
   insights.setAgent("claude");
+  insights.agentChosen = false;
   insights.setSessionAgent("");
   insights.setAutomatedScope("human");
   insights.promptText = "";
@@ -785,6 +786,28 @@ describe("setAgent", () => {
 
     expect(insights.agent).toBe("codex");
     expect(api.listInsights).not.toHaveBeenCalled();
+  });
+});
+
+describe("applyDefaultAgent", () => {
+  it("adopts the configured default until the picker chooses an agent", () => {
+    insights.applyDefaultAgent("codex");
+    expect(insights.agent).toBe("codex");
+
+    insights.applyDefaultAgent("gemini");
+    expect(insights.agent).toBe("gemini");
+
+    insights.setAgent("kiro");
+    insights.applyDefaultAgent("codex");
+    expect(insights.agent).toBe("kiro");
+  });
+
+  it("keeps the current agent for unknown or absent values", () => {
+    insights.applyDefaultAgent("claude-code");
+    expect(insights.agent).toBe("claude");
+
+    insights.applyDefaultAgent(undefined);
+    expect(insights.agent).toBe("claude");
   });
 });
 

@@ -12,6 +12,7 @@ import {
   isRemoteConnection,
 } from "../api/runtime.js";
 import { DEFAULT_CHART_PALETTE, isChartPalette, type ChartPalette } from "../utils/chartPalette.js";
+import { insights } from "./insights.svelte.js";
 import { ui } from "./ui.svelte.js";
 
 export type ToolResultImagesPolicy = "keep" | "drop" | "offload";
@@ -111,6 +112,9 @@ class SettingsStore {
       this.readOnly = data.read_only === true;
       this.chartPalette = data.chart_palette;
       ui.applyZoomDefault(data.zoom_level);
+      // Older servers omit the field; applyDefaultAgent then keeps the
+      // built-in agent.
+      insights.applyDefaultAgent(data.insight_default_agent);
       // A response without the field, including every fixture that predates
       // it, reads as the default keep policy instead of failing the load.
       this.toolResultImages =

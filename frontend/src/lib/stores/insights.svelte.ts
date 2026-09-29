@@ -17,6 +17,16 @@ import {
 import { localDateStr } from "../utils/dates.js";
 import { LatestRead } from "../utils/latest-read.js";
 
+/** Agent CLIs an insight request can name, mirroring the server set. */
+const AGENT_NAMES: readonly AgentName[] = ["claude", "codex", "copilot", "gemini", "kiro"];
+
+/** Agent used until the server reports a configured default. */
+const BUILT_IN_AGENT: AgentName = "claude";
+
+function isAgentName(value: string | undefined): value is AgentName {
+  return value !== undefined && (AGENT_NAMES as readonly string[]).includes(value);
+}
+
 export interface InsightTask {
   clientId: string;
   type: InsightType;
@@ -57,7 +67,10 @@ class InsightsStore {
   type: InsightType = $state("daily_activity");
   cannedKind: CannedInsightKind = $state("prompt_maturity_review");
   project: string = $state("");
-  agent: AgentName = $state("claude");
+  agent: AgentName = $state(BUILT_IN_AGENT);
+  /** True once the picker chose an agent. The configured server default
+   *  stops replacing that choice. */
+  agentChosen = $state(false);
   sessionAgent: string = $state("");
   automatedScope: AutomatedScope = $state("human");
   items: DbInsight[] = $state([]);
@@ -136,6 +149,15 @@ class InsightsStore {
   }
 
   setAgent(agent: AgentName) {
+    this.agentChosen = true;
+    this.agent = agent;
+  }
+
+  /** applyDefaultAgent adopts the agent configured on the server. It is
+   *  ignored once the picker chose an agent, and for responses that omit the
+   *  field or name an agent this build does not support. */
+  applyDefaultAgent(agent: string | undefined) {
+    if (this.agentChosen || !isAgentName(agent)) return;
     this.agent = agent;
   }
 

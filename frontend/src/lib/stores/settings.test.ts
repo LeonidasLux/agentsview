@@ -66,6 +66,27 @@ describe("SettingsStore.load mode handling", () => {
     expect(settings.readOnly).toBe(true);
   });
 
+  it("seeds the insight agent with the configured default", async () => {
+    const { insights } = await import("./insights.svelte.js");
+    insights.agent = "claude";
+    insights.agentChosen = false;
+    settingsService.getApiV1Settings.mockResolvedValue({
+      agent_dirs: {},
+      chart_palette: "agentsview",
+      github_configured: false,
+      host: "127.0.0.1",
+      port: 8080,
+      read_only: false,
+      require_auth: false,
+      terminal: { mode: "auto" },
+      insight_default_agent: "codex",
+    });
+
+    await settings.load();
+
+    expect(insights.agent).toBe("codex");
+  });
+
   it("keeps current metadata when a stale settings load succeeds", async () => {
     let finishFirst!: (value: Record<string, unknown>) => void;
     let finishSecond!: (value: Record<string, unknown>) => void;
