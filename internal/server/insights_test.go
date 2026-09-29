@@ -405,6 +405,25 @@ func TestGenerateCannedInsight_ConfiguredDefaultAgent(t *testing.T) {
 	assertBodyContains(t, w, "stub: no CLI")
 }
 
+func TestGenerateInsight_InvalidConfiguredDefaultAgent(t *testing.T) {
+	for _, body := range []string{
+		`{"type":"daily_activity","date_from":"2025-01-15","date_to":"2025-01-15"}`,
+		`{"type":"llm_canned","kind":"prompt_maturity_review","date_from":"2025-01-15","date_to":"2025-01-15","llm_opt_in":true}`,
+	} {
+		t.Run(body, func(t *testing.T) {
+			te := setupWithServerOpts(t, []server.Option{
+				server.WithGenerateFunc(func(context.Context, string, string) (insight.Result, error) {
+					return insight.Result{}, errors.New("stub: no CLI")
+				}),
+			}, func(c *config.Config) { c.Insights.DefaultAgent = "unknown" })
+
+			w := te.post(t, "/api/v1/insights/generate", body)
+			assertStatus(t, w, http.StatusBadRequest)
+			assertBodyContains(t, w, "invalid agent")
+		})
+	}
+}
+
 func TestGenerateInsight_SessionValidation(t *testing.T) {
 	te := setup(t)
 

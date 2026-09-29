@@ -301,6 +301,26 @@ describe("selectedItem", () => {
 });
 
 describe("generate (multi-task)", () => {
+  it.each(["daily_activity", "llm_canned", "agent_analysis"] as const)(
+    "leaves the %s agent to the server until the user chooses one",
+    (type) => {
+      api.generateInsight.mockReturnValue({ abort: vi.fn(), done: new Promise(() => {}) });
+      insights.setType(type);
+      if (type === "agent_analysis") {
+        insights.generateForSession(makeSession());
+      } else {
+        insights.generate();
+      }
+
+      expect(api.generateInsight).toHaveBeenCalledOnce();
+      expect(api.generateInsight.mock.lastCall?.[0].agent).toBeUndefined();
+
+      insights.setAgent("gemini");
+      insights.generate();
+      expect(api.generateInsight.mock.lastCall?.[0].agent).toBe("gemini");
+    },
+  );
+
   it("starts independent report and session tasks without crypto.randomUUID", () => {
     // Non-localhost HTTP origins do not expose crypto.randomUUID.
     vi.stubGlobal("crypto", {});
@@ -555,6 +575,7 @@ describe("generate (multi-task)", () => {
     expect(failedTask.status).toBe("error");
 
     insights.promptText = "A different current focus";
+    insights.setAgent("gemini");
     insights.setSessionAgent("claude");
     insights.retryTask(failedTask.clientId);
 

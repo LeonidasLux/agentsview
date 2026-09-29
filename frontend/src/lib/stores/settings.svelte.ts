@@ -9,6 +9,7 @@ import {
   ApiError,
   generatedErrorMessage,
   setAuthToken,
+  getServerUrl,
   isRemoteConnection,
 } from "../api/runtime.js";
 import { DEFAULT_CHART_PALETTE, isChartPalette, type ChartPalette } from "../utils/chartPalette.js";
@@ -57,6 +58,7 @@ function forbiddenMessage(serverMessage: string): string {
 class SettingsStore {
   private mutationQueue: Promise<void> | null = null;
   private loadVersion = 0;
+  private serverUrl = getServerUrl();
   agentDirs: Record<string, string[]> = $state({});
   sessionProviders: SessionProvider[] = $state([]);
   disabledAgents: string[] = $state([]);
@@ -81,6 +83,11 @@ class SettingsStore {
   needsAuth: boolean = $state(false);
 
   async load(): Promise<void> {
+    const serverUrl = getServerUrl();
+    if (serverUrl !== this.serverUrl) {
+      this.serverUrl = serverUrl;
+      insights.resetAgent();
+    }
     if (this.saving && this.mutationQueue) {
       await this.mutationQueue;
       return this.load();

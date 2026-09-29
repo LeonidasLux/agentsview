@@ -299,13 +299,11 @@ func insightGenerateOptions(cfg config.Config) insight.GenerateOptions {
 
 // resolvedInsightDefaultAgent reports the agent insight generation falls back
 // to when a request does not choose one: the configured [insights]
-// default_agent, or the built-in default. Load rejects unknown names, so an
-// unparsable value here only appears with a programmatically built config.
+// default_agent, or the built-in default. Config loading normalizes and
+// validates the configured name.
 func resolvedInsightDefaultAgent(cfg config.Config) string {
-	if name := strings.TrimSpace(cfg.Insights.DefaultAgent); name != "" {
-		if parsed, err := config.ParseInsightAgent(name); err == nil {
-			return parsed
-		}
+	if cfg.Insights.DefaultAgent != "" {
+		return cfg.Insights.DefaultAgent
 	}
 	return config.DefaultInsightAgent
 }

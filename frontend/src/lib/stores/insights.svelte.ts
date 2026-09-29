@@ -1,4 +1,5 @@
 import { m } from "../i18n/index.js";
+import { AGENT_NAMES } from "../api/types/insights.js";
 import type {
   InsightType,
   AgentName,
@@ -17,9 +18,6 @@ import {
 import { localDateStr } from "../utils/dates.js";
 import { LatestRead } from "../utils/latest-read.js";
 
-/** Agent CLIs an insight request can name, mirroring the server set. */
-const AGENT_NAMES: readonly AgentName[] = ["claude", "codex", "copilot", "gemini", "kiro"];
-
 /** Agent used until the server reports a configured default. */
 const BUILT_IN_AGENT: AgentName = "claude";
 
@@ -33,7 +31,7 @@ export interface InsightTask {
   dateFrom: string;
   dateTo: string;
   project: string;
-  agent: AgentName;
+  agent?: AgentName;
   kind?: CannedInsightKind;
   promptText: string;
   automatedScope: AutomatedScope;
@@ -53,7 +51,7 @@ interface GenerationSnapshot {
   dateFrom: string;
   dateTo: string;
   project: string;
-  agent: AgentName;
+  agent?: AgentName;
   kind?: CannedInsightKind;
   promptText: string;
   automatedScope: AutomatedScope;
@@ -153,6 +151,15 @@ class InsightsStore {
     this.agent = agent;
   }
 
+  get requestAgent(): AgentName | undefined {
+    return this.agentChosen ? this.agent : undefined;
+  }
+
+  resetAgent() {
+    this.agentChosen = false;
+    this.agent = BUILT_IN_AGENT;
+  }
+
   /** applyDefaultAgent adopts the agent configured on the server. It is
    *  ignored once the picker chose an agent, and for responses that omit the
    *  field or name an agent this build does not support. */
@@ -185,7 +192,7 @@ class InsightsStore {
       dateFrom: this.dateFrom,
       dateTo: this.dateTo,
       project: this.project,
-      agent: this.agent,
+      agent: this.requestAgent,
       kind: this.type === "llm_canned" ? this.cannedKind : undefined,
       promptText: this.promptText,
       automatedScope: this.automatedScope,
@@ -208,7 +215,7 @@ class InsightsStore {
         dateFrom: date,
         dateTo: date,
         project: session.project || "",
-        agent: this.agent,
+        agent: this.requestAgent,
         promptText: this.promptText,
         automatedScope: "human",
         sessionId: session.id,
